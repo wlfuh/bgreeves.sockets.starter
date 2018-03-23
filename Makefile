@@ -8,6 +8,6 @@ client: client.cpp
 	$(CXX) $(CXXFLAGS) client.cpp -o client
 
 clean:
-	rm *.o
+	rm client server
 
 .PHONY: clean
