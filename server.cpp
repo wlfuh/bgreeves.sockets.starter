@@ -1,6 +1,6 @@
 #include <stdio.h>		// printf()
 #include <stdlib.h>		// atoi()
-#include <sys/socket.h>	// socket(), connect()
+#include <sys/socket.h>	// socket(), bind(), listen(), accept()
 #include <unistd.h>		// close()
 
 #include "helpers.h"	// make_server_sockaddr()
