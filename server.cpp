@@ -1,4 +1,5 @@
 #include <stdio.h>		// printf()
+#include <string.h> 	// strlen()
 #include <stdlib.h>		// atoi()
 #include <sys/socket.h>	// socket(), bind(), listen(), accept()
 #include <unistd.h>		// close()
@@ -7,6 +8,9 @@
 
 static const int MAX_MESSAGE_SIZE = 256;
 
+static const char * RESPONSE_OK = "200";
+
+static const char * RESPONSE_ERROR = "400";
 /**
  * Receives a string message from the client, prints it to stdout, then
  * sends the integer 42 back to the client as a success code.
@@ -19,16 +23,36 @@ static const int MAX_MESSAGE_SIZE = 256;
  */
 int handle_connection(int connectionfd) {
 	// TODO: Implement this function
-
+	char buffer[MAX_MESSAGE_SIZE] = {};
 	// (1) Receive message from client.
-
+	int loc = 0;
+	bool response_ok = true;
+	while(true){
+			int received = recv(connectionfd, buffer + loc, MAX_MESSAGE_SIZE, 0);
+			printf("Got %d bytes\n", received);
+			loc += received;
+			if(loc > MAX_MESSAGE_SIZE){
+					response_ok = false;
+					break;
+			}
+			if(received == 0){
+					break;
+			}
+	}
 	// (2) Print out the message
-
+	if(response_ok){
+			printf("%s\n", buffer);
+	}
 	// (3) Send response code to client
-
+	if(send(connectionfd, response_ok? RESPONSE_OK : RESPONSE_ERROR, strlen(RESPONSE_OK), 0) == -1){
+		return -1;
+	}
+	else{
+		printf("Sent response code %s\n", RESPONSE_OK);
+	}
 	// (4) Close connection
-
-	return -1;
+	close(connectionfd);
+	return 0;
 }
 
 /**
@@ -43,22 +67,30 @@ int handle_connection(int connectionfd) {
  */
 int run_server(int port, int queue_size) {
 	// TODO: Implement the rest of this function
-	
+
 	// (1) Create socket
-
-	// (2) Set the "reuse port" socket option
-
-	// (3) Create a sockaddr_in struct for the proper port and bind() to it.
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = htons(port);
+	// (2) Set the "reuse port" socket option
+	int yes = 1;
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	// (3) Create a sockaddr_in struct for the proper port and bind() to it.
+	bind(sock, (struct sockaddr*) &addr, sizeof(addr));
 	if (make_server_sockaddr(&addr, port) == -1) {
 		return -1;
 	}
-
 	// (4) Begin listening for incoming connections.
-
+	listen(sock, queue_size);
+	printf("Listening...\n");
 	// (5) Serve incoming connections one by one forever.
 	while (true) {
-
+			int connectionfd = accept(sock, 0 , 0);
+			printf("Request accepted...\n");
+			handle_connection(connectionfd);
+			printf("Request finished...\n");
 	}
 }
 
